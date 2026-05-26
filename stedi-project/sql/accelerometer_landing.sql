@@ -1,4 +1,4 @@
-CREATE EXTERNAL TABLE IF NOT EXISTS stedi.accelerometer_trusted (
+CREATE EXTERNAL TABLE IF NOT EXISTS stedi.accelerometer_landing (
   timestamp  BIGINT,
   user       STRING,
   x          DOUBLE,
@@ -6,5 +6,8 @@ CREATE EXTERNAL TABLE IF NOT EXISTS stedi.accelerometer_trusted (
   z          DOUBLE
 )
 ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'
-LOCATION 's3://stedi-project-chandana/accelerometer/trusted/'
+WITH SERDEPROPERTIES (
+  'serialization.format' = '1'
+)
+LOCATION 's3://stedi-project-chandana/accelerometer/landing/'
 TBLPROPERTIES ('has_encrypted_data'='false');
