@@ -12,7 +12,6 @@ spark = glueContext.spark_session
 job = Job(glueContext)
 job.init(args['JOB_NAME'], args)
 
-# Read customer trusted from S3
 customer_df = glueContext.create_dynamic_frame.from_options(
     format_options={"multiline": False},
     connection_type="s3",
@@ -24,7 +23,6 @@ customer_df = glueContext.create_dynamic_frame.from_options(
     transformation_ctx="customer_trusted"
 ).toDF()
 
-# Read accelerometer trusted from S3
 accelerometer_df = glueContext.create_dynamic_frame.from_options(
     format_options={"multiline": False},
     connection_type="s3",
@@ -36,11 +34,6 @@ accelerometer_df = glueContext.create_dynamic_frame.from_options(
     transformation_ctx="accelerometer_trusted"
 ).toDF()
 
-print("Customer trusted count     :", customer_df.count())
-print("Accelerometer trusted count:", accelerometer_df.count())
-
-# Keep only customers who have accelerometer data
-# Join on email = user, keep only customer columns
 joined_df = customer_df.join(
     accelerometer_df.select("user").distinct(),
     customer_df["email"] == accelerometer_df["user"],
@@ -58,20 +51,23 @@ joined_df = customer_df.join(
     customer_df["sharewithfriendsasofdate"]
 )
 
-print("Customer curated count:", joined_df.count())
+customer_curated = DynamicFrame.fromDF(
+    joined_df, glueContext, "customer_curated"
+)
 
-# Write to customer curated S3 location
-glueContext.write_dynamic_frame.from_options(
-    frame=DynamicFrame.fromDF(
-        joined_df, glueContext, "customer_curated"
-    ),
+sink = glueContext.getSink(
+    path="s3://stedi-project-chandana/customer/curated/",
     connection_type="s3",
-    format="json",
-    connection_options={
-        "path": "s3://stedi-project-chandana/customer/curated/",
-        "partitionKeys": []
-    },
+    updateBehavior="UPDATE_IN_DATABASE",
+    partitionKeys=[],
+    enableUpdateCatalog=True,
     transformation_ctx="write_customer_curated"
 )
+sink.setCatalogInfo(
+    catalogDatabase="stedi",
+    catalogTableName="customer_curated"
+)
+sink.setFormat("json")
+sink.writeFrame(customer_curated)
 
 job.commit()
