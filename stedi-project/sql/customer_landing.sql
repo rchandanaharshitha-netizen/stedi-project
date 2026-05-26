@@ -1,4 +1,4 @@
-CREATE EXTERNAL TABLE IF NOT EXISTS customer_landing_landing (
+CREATE EXTERNAL TABLE IF NOT EXISTS stedi.customer_landing (
   serialnumber              STRING,
   sharewithpublicasofdate   BIGINT,
   birthday                  STRING,
@@ -11,5 +11,8 @@ CREATE EXTERNAL TABLE IF NOT EXISTS customer_landing_landing (
   sharewithfriendsasofdate  BIGINT
 )
 ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'
+WITH SERDEPROPERTIES (
+  'serialization.format' = '1'
+)
 LOCATION 's3://stedi-project-chandana/customer/landing/'
 TBLPROPERTIES ('has_encrypted_data'='false');
